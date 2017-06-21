@@ -80,15 +80,23 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void SetCameraTarget(Transform _tr) {
+    public void SetCameraTarget(int select,Transform _tr) {
+        switch (select)
+        {
+            case 0:
+                player1List.Remove(_tr);
+                break;
+            case 1:
+                player2List.Remove(_tr);
+                break;
+        }
+
         switch (inputSelect)
         {
             case 0:
-                player2List.Remove(_tr);
                 cameraFollow.target = player1List[Random.Range(0, player1List.Count)];
                 break;
             case 1:
-                player1List.Remove(_tr);
                 cameraFollow.target = player2List[Random.Range(0, player2List.Count)];
                 break;
         }

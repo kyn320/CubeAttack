@@ -13,6 +13,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     Vector3 oldPos, movePos, dir;
 
+    bool isAttack = false;
+
     Transform tr;
 
     private void Awake()
@@ -36,7 +38,11 @@ public class PlayerController : MonoBehaviour
         Vector3 pos = Vector3.zero;
         if (Physics.Raycast(transform.position, dir, out hit, dist))
         {
+
             movePos = hit.transform.position;
+            if (hit.collider.CompareTag("Wall")) {
+                movePos -= dir;
+            }
             return true;
         }
 
@@ -45,9 +51,12 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if(isAttack)
+            Attack(dir, 1f, power);
+
         if (GetComponent<Rigidbody>().velocity.y < -10f)
         {
-            GameManager.instance.SetCameraTarget(transform);
+            GameManager.instance.SetCameraTarget(playerNumber,transform);
         }
     }
 
@@ -110,12 +119,14 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator Move()
     {
+        isAttack = true;
         while (oldPos != movePos)
         {
-            oldPos = tr.position = Vector3.MoveTowards(tr.position, movePos, Time.deltaTime * lerpTime);
+            oldPos = tr.position = Vector3.Lerp(tr.position, movePos, Time.deltaTime * lerpTime);
+            
             yield return null;
         }
-        Attack(dir, 1f, power);
+        isAttack = false;
     }
 
 }
