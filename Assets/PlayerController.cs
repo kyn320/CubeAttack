@@ -16,20 +16,22 @@ public class PlayerController : MonoBehaviour
     bool isAttack = false;
 
     Transform tr;
+    Rigidbody ri;
 
     private void Awake()
     {
         tr = GetComponent<Transform>();
+        ri = GetComponent<Rigidbody>();
     }
 
     public void OnMouseDown()
     {
-        if (playerNumber != GameManager.instance.InputSelect)
+        if (!GameManager.instance.isInputed || MoveSelector.instance.isOpen || playerNumber != GameManager.instance.InputSelect)
             return;
 
         MoveSelector.instance.SetButtonAction(transform, ForwardAction, BackAction, LeftAction, RightAction);
-        GameManager.instance.cameraFollow.target = transform;
 
+        GameManager.instance.cameraFollow.target = transform;
     }
 
     public bool CheckAttack(Vector3 dir, float dist)
@@ -40,7 +42,8 @@ public class PlayerController : MonoBehaviour
         {
 
             movePos = hit.transform.position;
-            if (hit.collider.CompareTag("Wall")) {
+            if (hit.collider.CompareTag("Wall") || hit.collider.GetComponent<PlayerController>().playerNumber == playerNumber)
+            {
                 movePos -= dir;
             }
             return true;
@@ -51,13 +54,10 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if(isAttack)
+        if (isAttack)
             Attack(dir, 1f, power);
 
-        if (GetComponent<Rigidbody>().velocity.y < -10f)
-        {
-            GameManager.instance.SetCameraTarget(playerNumber,transform);
-        }
+        
     }
 
     public void Attack(Vector3 dir, float dist, float power)
@@ -68,65 +68,95 @@ public class PlayerController : MonoBehaviour
         if (Physics.Raycast(transform.position, dir, out hit, dist, LayerMask.GetMask("Player")))
         {
             if (hit.collider.GetComponent<PlayerController>().playerNumber != playerNumber)
-                hit.rigidbody.AddForce((dir + Vector3.up) * power);
+            {
+                hit.collider.GetComponent<PlayerController>().Damage(dir, DiceController.instance.number);
+            }
         }
 
     }
 
     public void ForwardAction()
     {
-        if (!CheckAttack(transform.forward, Mathf.Infinity))
+        GameManager.instance.isInputed = false;
+        if (!CheckAttack(transform.forward, DiceController.instance.number))
         {
-            movePos = tr.position + Vector3.forward * 10f;
+            movePos = tr.position + Vector3.forward * DiceController.instance.number;
         }
         dir = Vector3.forward;
-        StartCoroutine("Move");
-        GameManager.instance.InputSelect += 1;
+        StartCoroutine("Move", true);
     }
 
     public void BackAction()
     {
-        if (!CheckAttack(-transform.forward, Mathf.Infinity))
+        GameManager.instance.isInputed = false;
+        if (!CheckAttack(-transform.forward, DiceController.instance.number))
         {
-            movePos = tr.position + Vector3.back * 10f;
+            movePos = tr.position + Vector3.back * DiceController.instance.number;
         }
         dir = Vector3.back;
-        StartCoroutine("Move");
-        GameManager.instance.InputSelect += 1;
+        StartCoroutine("Move", true);
     }
 
     public void RightAction()
     {
-        if (!CheckAttack(transform.right, Mathf.Infinity))
+        GameManager.instance.isInputed = false;
+        if (!CheckAttack(transform.right, DiceController.instance.number))
         {
-            movePos = tr.position + Vector3.right * 10f;
+            movePos = tr.position + Vector3.right * DiceController.instance.number;
         }
         dir = Vector3.right;
-        StartCoroutine("Move");
-        GameManager.instance.InputSelect += 1;
+        StartCoroutine("Move", true);
     }
 
     public void LeftAction()
     {
-        if (!CheckAttack(-transform.right, Mathf.Infinity))
+        GameManager.instance.isInputed = false;
+        if (!CheckAttack(-transform.right, DiceController.instance.number))
         {
-            movePos = tr.position +  Vector3.left * 10f;
+            movePos = tr.position + Vector3.left * DiceController.instance.number;
         }
         dir = Vector3.left;
-        StartCoroutine("Move");
-        GameManager.instance.InputSelect += 1;
+        moveCoroutine = StartCoroutine("Move", true);
     }
 
-    IEnumerator Move()
+    public void Damage(Vector3 dir, int dist)
     {
-        isAttack = true;
+        if (moveCoroutine != null)
+            StopCoroutine("Move");
+
+        movePos = tr.position + (dir * dist);
+
+        if (Random.Range(0f, 100f) < 20f || GameManager.instance.CheckBoardOut(movePos))
+            ri.AddForce((dir + Vector3.up) * power, ForceMode.Impulse);
+        else
+        {
+            moveCoroutine = StartCoroutine("Move", false);
+        }
+    }
+
+    Coroutine moveCoroutine = null;
+
+    IEnumerator Move(bool isDamage)
+    {
+
+        isAttack = isDamage;
         while (oldPos != movePos)
         {
             oldPos = tr.position = Vector3.Lerp(tr.position, movePos, Time.deltaTime * lerpTime);
-            
+            if (ri.velocity.y < -5f)
+            {
+                GameManager.instance.RemovePlayer(playerNumber, transform);
+                break;
+            }
             yield return null;
         }
-        isAttack = false;
+        tr.rotation = Quaternion.identity;
+        if (isAttack)
+            isAttack = false;
+
+        moveCoroutine = null;
+        if (isDamage)
+            GameManager.instance.InputSelect += 1;
     }
 
 }

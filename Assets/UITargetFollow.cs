@@ -14,8 +14,6 @@ public class UITargetFollow : MonoBehaviour {
 
     [SerializeField]
     Vector3 margin;
-    [SerializeField]
-    Vector3 pos;
 
     private void Awake()
     {

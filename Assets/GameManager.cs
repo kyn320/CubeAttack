@@ -18,6 +18,8 @@ public class GameManager : MonoBehaviour
     public List<Transform> player1List;
     public List<Transform> player2List;
 
+    public bool isInputed = false;
+
     [SerializeField]
     private int inputSelect = 1;
 
@@ -31,6 +33,7 @@ public class GameManager : MonoBehaviour
         {
             inputSelect = value;
             inputSelect = inputSelect % 2;
+            DiceController.instance.ThrowDice();
         }
     }
 
@@ -64,8 +67,8 @@ public class GameManager : MonoBehaviour
                     GameObject p2 = Instantiate(player2, transform.position + new Vector3(margin.x * j, 1, margin.y * i), Quaternion.identity);
                     player2List.Add(p2.transform);
                 }
-                else if (i > 1 && i < (size.y - 2) && (j) % 2 == 0)
-                    CreateWalls(i, j);
+                //   else if (i > 1 && i < (size.y - 2) && (j) % 2 == 0)
+                //       CreateWalls(i, j);
             }
         }
     }
@@ -74,13 +77,13 @@ public class GameManager : MonoBehaviour
     {
         if (Random.Range(0, 100) < 40)
         {
-            blockList.Add(new Block(j,i));
+            blockList.Add(new Block(j, i));
             GameObject g = Instantiate(wall, transform.position + new Vector3(margin.x * j, 1, margin.y * i), Quaternion.identity);
             g.transform.parent = transform;
         }
     }
 
-    public void SetCameraTarget(int select,Transform _tr) {
+    public void RemovePlayer(int select, Transform _tr) {
         switch (select)
         {
             case 0:
@@ -90,7 +93,10 @@ public class GameManager : MonoBehaviour
                 player2List.Remove(_tr);
                 break;
         }
+        Destroy(_tr.gameObject);
+    }
 
+    public void SetCamTarget() {
         switch (inputSelect)
         {
             case 0:
@@ -100,8 +106,19 @@ public class GameManager : MonoBehaviour
                 cameraFollow.target = player2List[Random.Range(0, player2List.Count)];
                 break;
         }
+    }
 
-        Destroy(_tr.gameObject);
+    public void SetCamTarget(Transform tr)
+    {
+        cameraFollow.target = tr;
+    }
+
+    public bool CheckBoardOut(Vector3 pos) {
+        if (pos.x < 0 || pos.x >= size.x || pos.z < 0 || pos.z >= size.y) {
+            return true;
+        }
+        print(pos);
+        return false;
     }
 
 }

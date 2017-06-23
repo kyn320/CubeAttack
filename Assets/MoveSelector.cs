@@ -12,6 +12,8 @@ public class MoveSelector : MonoBehaviour
     public Button forwardButton, backButton, leftButton, rightButton;
     public UITargetFollow targetFollow;
 
+    public bool isOpen = false;
+
     Animator ani;
     RectTransform tr;
     
@@ -31,7 +33,8 @@ public class MoveSelector : MonoBehaviour
         {
             CloseButton();
         }
-        
+
+        isOpen = true;
         targetFollow.target = _tr;
         ani.SetTrigger("Open");
         forwardButton.onClick.AddListener(forward);
@@ -48,6 +51,7 @@ public class MoveSelector : MonoBehaviour
 
     public void CloseButton()
     {
+        isOpen = false;
         targetFollow.target = null;
         ani.SetTrigger("Close");
         forwardButton.onClick.RemoveAllListeners();
